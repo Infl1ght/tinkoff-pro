@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-main>
-      <MainComponent/>
+      <MainComponent />
     </v-main>
   </v-app>
 </template>
