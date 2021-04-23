@@ -50,10 +50,11 @@
     </div>
     <h3 v-if="result">Выгодно!</h3>
     <h3 v-else>Не выгодно!</h3>
-    <h4>За месяц вы будете дополнительно получать {{ round(incomeWithPro) }}₽</h4>
+    <h4>За месяц вы будете дополнительно получать {{ round(balanceWithPro - balanceWithoutPro) }}₽</h4>
     Как посчиталась эта сумма?
     За счёт повышенного процента на остаток по счёту
-    ({{ round(interestPro * 100)}}% вместо {{ round(interest * 100) }}%) вы получите {{ }}
+    ({{ round(interestPro * 100)}}% вместо {{ round(interest * 100) }}%) вы получите {{ round(incomeWithPro) }}₽ вместо {{ round(incomeWithoutPro) }}₽, 
+    но заплатите {{ proCost }}₽ за Tinkoff Pro
   </div>
 </template>
 
@@ -68,7 +69,7 @@ export default {
       interest: 0.035,
       interestPro: 0.05,
       notificationsCost: 59,
-      serviceCost: 199,
+      proCost: 199,
       maxAmountForInterest: 300000,
     }
   },
@@ -104,25 +105,24 @@ export default {
     incomeWithPro() {
       const amountForInterest = this.averageMonthlyAmount < this.maxAmountForInterest
         ? this.averageMonthlyAmount : this.maxAmountForInterest;
-      const additionalCosts = this.usePaidNotifications
-        ? this.serviceCost - this.notificationsCost : this.serviceCost;
-      return amountForInterest * this.interestMonthlyPro - additionalCosts;
+      return amountForInterest * this.interestMonthlyPro;
     },
     incomeWithoutPro() {
       const amountForInterest = this.averageMonthlyAmount < this.maxAmountForInterest
         ? this.averageMonthlyAmount : this.maxAmountForInterest;
-      const additionalCosts = this.usePaidNotifications
-        ? this.serviceCost - this.notificationsCost : this.serviceCost;
-      return (amountForInterest * 0.015) / 12 - additionalCosts;
+      return amountForInterest * this.interestMonthly;
+    },
+    additionalCostsWithoutPro() {
+      return this.usePaidNotifications ? this.notificationsCost : 0;
+    },
+    balanceWithPro() {
+      return this.incomeWithPro - this.proCost;
+    },
+    balanceWithoutPro() {
+      return this.incomeWithoutPro - this.additionalCostsWithoutPro;
     },
     result() {
-      let monthLimit = this.serviceCost;
-      if (this.usePaidNotifications) {
-        monthLimit -= this.notificationsCost;
-      }
-      const limit = (monthLimit * 12) / 0.015;
-      const sum = this.averageMonthlyAmount;
-      return sum > limit;
+      return this.balanceWithPro > 0;
     },
   },
 }
