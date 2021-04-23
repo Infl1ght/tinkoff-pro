@@ -1,9 +1,5 @@
 <template>
-  <v-app>
-    <v-main>
-      <MainComponent />
-    </v-main>
-  </v-app>
+  <MainComponent />
 </template>
 
 <script lang="ts">
