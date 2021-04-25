@@ -19,8 +19,10 @@ export default {
 
   .tooltip .data {
     position: absolute;
-    top: 0;
-    left: 0.5rem;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 12px);
+
     background: #041a2c; 
     color: #fff; 
     width: 250px;
