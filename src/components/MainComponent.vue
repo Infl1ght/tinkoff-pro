@@ -9,9 +9,6 @@
         <img src="@/assets/icons/github.png" height="24"/>
       </a>
     </span>
-    <span class="settings-button">
-      <img src="@/assets/icons/settings.svg" height="32"/>
-    </span>
     <p>
       Простой калькулятор поможет посчитать, подключать ли Вам <a href="https://www.tinkoff.ru/pro/">Tinkoff Pro</a> или нет
     </p>
@@ -37,7 +34,7 @@
     <div>
       <input
         class="input-money"
-        v-model="averageMonthlyAmount"
+        v-model.lazy="averageMonthlyAmount"
         value
         type="number"
         min="0"
@@ -45,8 +42,31 @@
       ₽
     </div>
     <div>
-      <input type="checkbox" id="checkbox" v-model="usePaidNotifications">
+      <input type="checkbox" id="checkbox" v-model="payForNotifications">
       Пользуюсь оповещениями об операциях по карте ({{ notificationsCost }}₽/месяц)
+    </div>
+    <div>
+      <input type="checkbox" id="checkbox" v-model="payForService">
+      Плачу за обслуживание карты ({{ serviceCost }}₽/месяц)
+    </div>
+    <div>
+      <input type="checkbox" id="checkbox" v-model="payForTinkoffMobile">
+      Пользуюсь Tinkoff Mobile
+    </div>
+    <div v-show="payForTinkoffMobile">
+    <div>
+      Плачу за минуты Tinkoff Mobile:
+    </div>
+    <div>
+      <input
+        class="input-money"
+        v-model.lazy="tMobileCost"
+        value
+        type="number"
+        min="0"
+        step="1" />
+      ₽
+    </div>
     </div>
     <h3 v-if="result">Выгодно!</h3>
     <h3 v-else>Не выгодно!</h3>
@@ -65,12 +85,16 @@ export default {
     return {
       interestSum: 100,
       averageMonthlyAmount: 20000,
-      usePaidNotifications: true,
+      payForNotifications: true,
+      payForTinkoffMobile: false,
+      payForService: false,
       interest: 0.035,
       interestPro: 0.05,
+      maxAmountForInterest: 300000,
       notificationsCost: 59,
       proCost: 199,
-      maxAmountForInterest: 300000,
+      serviceCost: 99,
+      tMobileCost: 149,
     }
   },
   mounted() {
@@ -113,7 +137,18 @@ export default {
       return amountForInterest * this.interestMonthly;
     },
     additionalCostsWithoutPro() {
-      return this.usePaidNotifications ? this.notificationsCost : 0;
+      let additionalCost = 0;
+      if (this.payForNotifications) {
+        additionalCost += this.notificationsCost;
+      }
+      if (this.payForService) {
+        additionalCost += this.serviceCost;
+      }
+      if (this.payForTinkoffMobile) {
+        additionalCost += parseFloat(this.tMobileCost);
+      }
+      console.log('additionalCost :>> ', additionalCost);
+      return additionalCost;
     },
     balanceWithPro() {
       return this.incomeWithPro - this.proCost;
@@ -167,14 +202,6 @@ export default {
   a.repo-link {
     border-bottom: none;
     font-size: 15px;
-  }
-
-  .settings-button {
-    position: absolute;
-    left: 32px;
-    top: 32px;
-    height: 32px;
-    z-index: 1;
   }
   .or {
     margin-left: 30px;
