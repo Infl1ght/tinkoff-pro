@@ -16,13 +16,12 @@
     <div class="calculation-block">
       <div class="main-calculation-block">
         <div>
-          Сколько начисляется процентов на остаток в месяц?
+          Сколько начисляется процентов на остаток в месяц? <Tooltip>Можно посмотреть в последней выписке по счёту Tinkoff Black</Tooltip> 
         </div>
         <div>
           <input
             class="input-money"
             v-model="interestSum"
-            value
             type="number"
             min="0"
             step="0.1" />
@@ -32,13 +31,12 @@
           или
         </div>
         <div>
-          Среднемесячный остаток на карте:
+          Среднемесячный остаток на карте: <Tooltip>Какая сумма денег хранится на счёте в среднем за месяц. На эту сумму начисляется процент на остаток.</Tooltip>
         </div>
         <div>
           <input
             class="input-money"
             v-model.lazy="averageMonthlyAmount"
-            value
             type="number"
             min="0"
             step="0.1" />
@@ -48,10 +46,18 @@
       <div class="input-checkbox">
         <input type="checkbox" id="checkbox" v-model="payForNotifications">
         Пользуюсь оповещениями об операциях по карте ({{ notificationsCost }}₽/месяц)
+        <Tooltip>Плата за оповещения об операциях по карте входит в стоимость Tinkoff Pro</Tooltip>
       </div>
       <div class="input-checkbox">
         <input type="checkbox" id="checkbox" v-model="payForService">
         Плачу за обслуживание карты ({{ serviceCost }}₽/месяц)
+        <Tooltip>Обслуживание карты бесплатно, если:
+          <ul style="margin-block-start: 0.3em; padding-left: 15px;">
+            <li>оформлена подписка Tinkoff Pro;</li>
+            <li>на карте, вкладах, накопительных и брокерских счетах каждый день в сумме хранится не менее 50 000 ₽;</li>
+            <li>вы взяли кредит в Тинькофф;</li>
+            <li>вам меньше 18 лет;</li>
+            <li>вы получаете пенсию на карту Tinkoff Black</li></ul></Tooltip>
       </div>
       <div class="input-checkbox">
         <input type="checkbox" id="checkbox" v-model="payForTinkoffMobile">
@@ -61,11 +67,11 @@
         <input
           class="input-money-small"
           v-model.lazy="tinkoffMobileCost"
-          value
           type="number"
           min="0"
           step="1" />
         ₽
+        <Tooltip>Tinkoff Pro включает в себя 600 минут связи. Выгода от Tinkoff Pro при использовании Tinkoff Mobile зависит от региона и от других факторов. Выгоду необходимо подсчитать самостоятельно исходя из Вашего тарифа.</Tooltip>
       </span>
       </div>
       <div>
@@ -73,29 +79,29 @@
         <input
           class="input-money-small"
           v-model.lazy="additionalProfit"
-          value
           type="number"
           min="0"
           step="1" />
         ₽
+        <Tooltip>Tinkoff Pro предоставляет и другие бонусы, которые трудно выразить определённым количеством денег. Например, увеличенный кэшбэк, бОльший выбор категорий для кэшбэка, увеличенные лимиты на переводы денег на другие карты и другие плюшки. Здесь можно указать сумму, в которую Вы оцениваете дополнительные преимущества Tinkoff Pro.</Tooltip>
       </div>
     </div>
 
     <h3>
       Вердикт:
-      <span v-if="result" class="profit">выгодно!</span>
+      <span v-if="proIsProfitable" class="profit">выгодно!</span>
       <span v-else class="loss">не выгодно!</span>
     </h3>
     <h4>
       В месяц вы будете
-      <span v-if="result" class="profit">дополнительно получать <span class="result-sum">{{ round(balanceWithPro - balanceWithoutPro) }}₽</span></span>
+      <span v-if="proIsProfitable" class="profit">дополнительно получать <span class="result-sum">{{ round(balanceWithPro - balanceWithoutPro) }}₽</span></span>
       <span v-else class="loss">дополнительно платить <span class="result-sum">{{ round(balanceWithoutPro - balanceWithPro) }}₽</span></span>
     </h4>
     <span class="underlined cursor-pointer" @click="showCalculationInfo = !showCalculationInfo">Как посчиталась эта сумма?</span>
     <div v-show="showCalculationInfo">
       <table>
         <tbody>
-          <tr><td>Дополнительная прибыль с увеличенного процента на остаток (+{{round((interestPro - interest) * 100)}}%)</td><td>+{{ round(interestIncomeWithPro - interestIncomeWithoutPro) }}₽</td></tr>
+          <tr><td>Увеличенный процент на остаток (+{{round((interestPro - interest) * 100)}}%)</td><td>+{{ round(interestIncomeWithPro - interestIncomeWithoutPro) }}₽</td></tr>
           <tr v-if="payForNotifications"><td>Экономия на плате за оповещения</td><td>+{{ notificationsCost }}₽</td></tr>
           <tr v-if="payForService"><td>Экономия на плате за обслуживание</td><td>+{{ serviceCost }}₽</td></tr>
           <tr v-if="payForTinkoffMobile"><td>Экономия на плате за Tinkoff Mobile</td><td>+{{ tinkoffMobileCost }}₽</td></tr>
@@ -105,12 +111,99 @@
         </tbody>
       </table>
     </div>
+    <div class="settings">
+      <span class="underlined cursor-pointer" @click="showSettings = !showSettings">Настройки</span>
+    </div>
+    <div v-show="showSettings">
+      <table>
+        <tbody>
+          <tr>
+            <td>Процент на остаток по счёту без Tinkoff Pro</td>
+            <td>
+              <input
+                class="input-money-small"
+                :value="round(parseFloat(interest) * 100)"
+                @change="interest = parseFloat($event.target.value) / 100"
+                type="number"
+                min="0"
+                step="0.1" />%
+              </td>
+          </tr>
+          <tr>
+            <td>Процент на остаток по счёту c Tinkoff Pro</td>
+            <td>
+              <input
+                class="input-money-small"
+                :value="round(parseFloat(interestPro) * 100)"
+                @change="interestPro = parseFloat($event.target.value) / 100"
+                type="number"
+                min="0"
+                step="0.1" />%
+              </td>
+          </tr>
+          <tr>
+            <td>Максимальная сумма на счёте, на которую начисляются проценты</td>
+            <td>
+              <input
+                style="width: 90px;"
+                class="input-money-small"
+                :value="parseFloat(maxAmountForInterest)"
+                @change="maxAmountForInterest = parseFloat($event.target.value)"
+                type="number"
+                min="0"
+                step="1" />₽
+              </td>
+          </tr>
+          <tr>
+            <td>Стоимость обслуживания счёта</td>
+            <td>
+              <input
+                class="input-money-small"
+                :value="parseFloat(serviceCost)"
+                @change="serviceCost = parseFloat($event.target.value)"
+                type="number"
+                min="0"
+                step="1" />₽
+              </td>
+          </tr>
+          <tr>
+            <td>Стоимость оповещений</td>
+            <td>
+              <input
+                class="input-money-small"
+                :value="parseFloat(notificationsCost)"
+                @change="notificationsCost = parseFloat($event.target.value)"
+                type="number"
+                min="0"
+                step="1" />₽
+              </td>
+          </tr>
+          <tr>
+            <td>Стоимость Tinkoff Pro</td>
+            <td>
+              <input
+                class="input-money-small"
+                :value="parseFloat(proCost)"
+                @change="proCost = parseFloat($event.target.value)"
+                type="number"
+                min="0"
+                step="1" />₽
+              </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
 <script>
+import Tooltip from './Tooltip.vue';
+
 export default {
   name: 'MainComponent',
+  components: {
+    Tooltip,
+  },
   data() {
     return {
       interestSum: 175,
@@ -127,6 +220,7 @@ export default {
       tinkoffMobileCost: 149,
       showCalculationInfo: false,
       additionalProfit: 0,
+      showSettings: false,
     }
   },
   mounted() {
@@ -190,15 +284,14 @@ export default {
     balanceWithoutPro() {
       return this.interestIncomeWithoutPro - this.additionalCostsWithoutPro;
     },
-    result() {
-      console.log('additionalCost :>> ', this.balanceWithPro, this.balanceWithoutPro);
+    proIsProfitable() {
       return this.balanceWithPro > this.balanceWithoutPro;
     },
   },
 }
 </script>
 
-<style scoped>
+<style>
   h1 {
     margin-bottom: 0px;
   }
@@ -302,5 +395,8 @@ export default {
   }
   td {
     padding: 5px;
+  }
+  .settings {
+    margin-top: 13px;
   }
 </style>
