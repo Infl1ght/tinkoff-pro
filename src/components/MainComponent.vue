@@ -193,6 +193,9 @@
         </tbody>
       </table>
     </div>
+    <div class="settings">
+      <a class="underlined cursor-pointer" href="https://www.tinkoff.ru/sl/6765Ls0rMGS">Оформить карту Tinkoff Black</a>
+    </div>
   </div>
 </template>
 
